@@ -1,0 +1,6 @@
+adafruit-circuitpython-bmp280
+Flask
+Pillow
+influxdb
+board
+# bme680
