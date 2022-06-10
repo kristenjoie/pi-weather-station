@@ -121,19 +121,19 @@ app = Flask(__name__)
 def temp():
     if ( args.sensor_type == 'bmp'):
         return jsonify(type="bmp",
-                   temperature="%.1f" % sensor.temperature + args.temperature_offset,
-                   pressure="%.1f" % sensor.pressure)
+                   temperature=float("%.1f" % sensor.temperature + args.temperature_offset),
+                   pressure=float("%.1f" % sensor.pressure))
     elif (args.sensor_type == 'bme'):
         gas, air_quality, score, air_quality_text = get_air_quality()
         return jsonify(type="bme",
-                   temperature="%.1f" % sensor.data.temperature + args.temperature_offset,
-                   humidity="%.1f" % sensor.data.humidity,
-                   gas_ref= "%.1f" % gas_baseline,
-                   gas_sensor="%.1f" % gas,
-                   air_quality="%.1f" % air_quality,
-                   score="%.1f" % score,
+                   temperature=float("%.1f" % sensor.data.temperature + args.temperature_offset),
+                   humidity=float("%.1f" % sensor.data.humidity),
+                   gas_ref= float("%.1f" % gas_baseline),
+                   gas_sensor=float("%.1f" % gas),
+                   air_quality=float("%.1f" % air_quality),
+                   score=float("%.1f" % score),
                    air_quality_text=air_quality_text,
-                   pressure="%.1f" % sensor.data.pressure)
+                   pressure=float("%.1f" % sensor.data.pressure))
 
 @app.route('/set/<int:gas>') # if need to adjust 'gas_baseline' after burn-in time 
 def set(gas):
