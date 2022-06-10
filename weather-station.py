@@ -12,22 +12,32 @@ import threading
 import traceback
 import json
 
+# load config file
 SENSOR_LIST = json.loads(open("sensor.config.json").read())
 
+# TODO: Add argparse
 API_OPENWEATHERMAP_KEY = os.environ.get('API_OPENWEATHERMAP_KEY')
 API_OPENWEATHERMAP_LOCATION = os.environ.get('API_OPENWEATHERMAP_LOCATION')
 
+LOCALE = "fr_FR"
 locale.setlocale(locale.LC_TIME, "fr_FR")
 
-STOP_FLAG = False
+# load translation file
+TXT = json.loads(open("locales/{}.json".format(LOCALE)).read())
 
+# Refresh time
 SENSOR_REFRESH_TIME = 10 # 10 seconds
+
+
+# Stop all running Thread
+THREAD_STOP_FLAG = False
 
 # TODO: find lat @ lon
 # http://api.openweathermap.org/geo/1.0/direct?q={city name},{state code},{country code}&limit={limit}&appid={API key}
 
 # TODO: air quality
 # https://api.openweathermap.org/data/2.5/air_pollution?lat=<lat>&lon=<lon>&appid=<apikey>
+
 
 def get_api_openweather_data(location, api_key):
     # TODO: change request to replace cityid by lat & lon
@@ -43,7 +53,7 @@ def get_sensor_data(ip, port):
     # return json.loads('{"type":"bmp", "temperature":20, "humidity":68.9, "pressure":1201, "air_quality_text":"ok"}')
 
 def inside_room_data(window):
-    while True and not STOP_FLAG:
+    while True and not THREAD_STOP_FLAG:
         try: 
             for room in SENSOR_LIST :
                 room_data = get_sensor_data(room["ip"], room["port"])
@@ -55,7 +65,7 @@ def inside_room_data(window):
                 if "air_quality_text" in room_data: window.room["air_quality"].set("Inside Air: {}".format(room_data["air_quality_text"]))
                 time.sleep(SENSOR_REFRESH_TIME)
         except Exception as e :
-            if not STOP_FLAG:
+            if not THREAD_STOP_FLAG:
                 traceback.print_exc()
             break
 
@@ -81,4 +91,4 @@ if __name__ == '__main__':
 
     window.mainloop()
     # only app is stopped
-    STOP_FLAG = True # stopping Threads
+    THREAD_STOP_FLAG = True # stopping Threads

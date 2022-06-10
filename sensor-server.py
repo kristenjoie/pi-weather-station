@@ -7,13 +7,19 @@
 
 import time
 import argparse
+import json
 
 parser = argparse.ArgumentParser()
 parser.add_argument("sensor_type", type=str,
                     help="display a square of a given number")
 parser.add_argument("-t", "--temperature_offset", type=int, default=0,
                     help="Add an Offset to temperature")
+parser.add_argument("-l", "--locale", type=str, default="en_GB",
+                    help="Choose locale")
 args = parser.parse_args()
+
+# load translation file
+TXT = json.loads(open("locales/{}.json".format(args.locale)).read())
 
 if args.sensor_type == 'bmp':
     import adafruit_bmp280
@@ -92,12 +98,12 @@ elif args.sensor_type == 'bme':
     def get_air_quality():
         score = (100-air_quality_score)*5
         # air_quality = score
-        if   (score >= 301) : IAQ_text = "Dangereux"
-        elif (score >= 201 and score <= 300 ): IAQ_text = "Mauvais"
-        elif (score >= 176 and score <= 200 ): IAQ_text = "Médiocre"
-        elif (score >= 151 and score <= 175 ): IAQ_text = "Modéré"
-        elif (score >=  51 and score <= 150 ): IAQ_text = "Bon"
-        elif (score >=  00 and score <=  50 ): IAQ_text = "Très Bon"
+        if   (score >= 301) : IAQ_text = TXT["VERY_POOR"]
+        elif (score >= 201 and score <= 300 ): IAQ_text = TXT["POOR"]
+        elif (score >= 176 and score <= 200 ): IAQ_text = TXT["MEDIOCRE"]
+        elif (score >= 151 and score <= 175 ): IAQ_text = TXT["MODERATE"]
+        elif (score >=  51 and score <= 150 ): IAQ_text = TXT["GOOD"]
+        elif (score >=  00 and score <=  50 ): IAQ_text = TXT["VERY_GOOD"]
         return gas, air_quality_score, score, IAQ_text
 
     t = threading.Thread(name='sensor_background', target=sensor_background)
