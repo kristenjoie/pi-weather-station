@@ -37,6 +37,10 @@ For influxdb
 sudo pip3 install influxdb
 ```
 
+## ⚙️ Configuration
+
+config file `sensor.config.json` to list available sensors and theirs name, ip and port.
+
 ## 🚀 Run
 To run the server part
 ```

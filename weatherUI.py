@@ -4,6 +4,7 @@
 # UI
 # #
 
+from concurrent.futures import thread
 import tkinter as tk
 from PIL import Image, ImageTk
 import subprocess
@@ -21,13 +22,13 @@ class WeatherUI(tk.Tk) :
         self.bind("<Button-1>", self.turn_on_video_output) # to turn off video_output, we use cron table 
 
         self.room = {
-            "title": tk.StringVar(self, "Room"),
+            "name": tk.StringVar(self, "Room"),
             "temperature": tk.StringVar(self, "---- °C "),
             "humidity": tk.StringVar(self, "---- %"),
             "pressure": tk.StringVar(self, "----")
         }
         self.outside = {
-            "title": tk.StringVar(self, "Outside"),
+            "name": tk.StringVar(self, "Outside"),
             "temperature": tk.StringVar(self, "---- °C "),
             "humidity": tk.StringVar(self, "---- %"),
             "wind": tk.StringVar(self, "---- N")
@@ -39,7 +40,7 @@ class WeatherUI(tk.Tk) :
         }
         self.weather = {
             "description": tk.StringVar(self, "----"),
-            "air_quality": tk.StringVar(self, "Air: :-)")
+            "air_quality": tk.StringVar(self, "Inside Air: :-)")
         }
 
         ##
@@ -97,8 +98,8 @@ class WeatherUI(tk.Tk) :
         self.initMiddleRight(bmrCanvas)
 
     def init_roomUI(self, master) :
-        titleLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.room["title"], font=("Helvetica", 15,"bold"))
-        titleLabel.pack(anchor=tk.NW)
+        nameLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.room["name"], font=("Helvetica", 15,"bold"))
+        nameLabel.pack(anchor=tk.NW)
         temperatureLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.room["temperature"], font=("Helvetica", 30,"bold"))
         temperatureLabel.pack(side=tk.LEFT)
         humidityLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.room["humidity"], font=("Helvetica", 15,"bold"))
@@ -107,8 +108,8 @@ class WeatherUI(tk.Tk) :
         pressureLabel.pack(side=tk.LEFT)
 
     def init_outsideUI(self, master) :
-        titleLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.outside["title"], font=("Helvetica", 15,"bold"))
-        titleLabel.pack(anchor=tk.NE)
+        nameLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.outside["name"], font=("Helvetica", 15,"bold"))
+        nameLabel.pack(anchor=tk.NE)
         temperatureLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.outside["temperature"], font=("Helvetica", 30,"bold"))
         temperatureLabel.pack(side=tk.RIGHT)
         humidityLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.outside["humidity"], font=("Helvetica", 15,"bold"))
