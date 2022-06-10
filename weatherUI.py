@@ -23,34 +23,34 @@ class WeatherUI(tk.Tk) :
 
         self.room = {
             "name": tk.StringVar(self, "Room"),
-            "temperature": tk.StringVar(self, "---- °C "),
+            "temperature": tk.StringVar(self, "---- °C"),
             "humidity": tk.StringVar(self, "---- %"),
-            "pressure": tk.StringVar(self, "----")
+            "pressure": tk.StringVar(self, "----"),
+            "air_quality": tk.StringVar(self, "Air: :-)")
         }
         self.outside = {
             "name": tk.StringVar(self, "Outside"),
             "temperature": tk.StringVar(self, "---- °C "),
             "humidity": tk.StringVar(self, "---- %"),
-            "wind": tk.StringVar(self, "---- N")
+            "wind": tk.StringVar(self, "---- N"),
+            "air_quality": tk.StringVar(self, "Air: :-)"),
+            "condition": tk.StringVar(self, "----"),
+            "sun_time": tk.StringVar(self, "sunTime: 00:00:00")
         }
 
         self.time = {
             "hour": tk.StringVar(self, "00:00:00"),
             "date": tk.StringVar(self, "1 Jan"),
         }
-        self.weather = {
-            "description": tk.StringVar(self, "----"),
-            "air_quality": tk.StringVar(self, "Inside Air: :-)")
-        }
 
         ##
         # The GUI use those canvas:
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # 
-        #                               pictCanvas
+        #                               backgroundCanvas
         # 
-        # - - - - - - - - - - - - - - - bottomCanvas- - - - - - - - - - - - - - -
-        # blCanvas           bmlCanvas            bmrCanvas              brCanvas
+        # - - - - - - - - - - - - - - - footerCanvas- - - - - - - - - - - - - - -
+        # roomCanvas           timeCanvas      conditionCanvas        outsideCanvas
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
         # #
         #---------------------------------------------------------------
@@ -58,74 +58,82 @@ class WeatherUI(tk.Tk) :
         self.imageIcon = Image.open("icons/10d@2x.png")
        
         self.initBackground()
-        self.initUI()
+        self.initFooterCanvas()
         
     def initBackground(self):
         
-        pictCanvas = tk.Canvas(self,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
-        pictCanvas.pack(fill=tk.BOTH, expand=1)
-        pictCanvas.update()
+        backgroundCanvas = tk.Canvas(self,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
+        backgroundCanvas.pack(fill=tk.BOTH, expand=1)
+        backgroundCanvas.update()
 
         img_w, img_h = self.imageBackground.size
-        width_factor = pictCanvas.winfo_width() / img_w
-        height_factor = pictCanvas.winfo_height() / img_h
+        width_factor = backgroundCanvas.winfo_width() / img_w
+        height_factor = backgroundCanvas.winfo_height() / img_h
         factor = min(width_factor, height_factor)
         self.imageBackground = self.imageBackground.resize((int(img_w*factor) , int(img_h*factor)))
         self.imagePhotoBackground = ImageTk.PhotoImage(self.imageBackground)
         
-        label0 = tk.Label(pictCanvas, image=self.imagePhotoBackground, bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
+        label0 = tk.Label(backgroundCanvas, image=self.imagePhotoBackground, bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
         label0.pack()
 
 
-    def initUI(self):
-        bottomCanvas = tk.Canvas(self,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
-        bottomCanvas.pack(anchor=tk.S, fill=tk.X)
+    def initFooterCanvas(self):
+        footerCanvas = tk.Canvas(self,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
+        footerCanvas.pack(anchor=tk.S, fill=tk.X)
 
-        blCanvas = tk.Canvas(bottomCanvas,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
-        blCanvas.pack(side=tk.LEFT, fill=tk.X, expand=1)
-        self.init_roomUI(blCanvas)
+        roomCanvas = tk.Canvas(footerCanvas,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
+        roomCanvas.pack(side=tk.LEFT, fill=tk.X, expand=1)
+        self.initRoomWidget(roomCanvas)
         
-        brCanvas = tk.Canvas(bottomCanvas,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
-        brCanvas.pack(side=tk.RIGHT, fill=tk.X, expand=1)
-        self.init_outsideUI(brCanvas)
+        outsideCanvas = tk.Canvas(footerCanvas,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
+        outsideCanvas.pack(side=tk.RIGHT, fill=tk.X, expand=1)
+        self.initOutsideWidget(outsideCanvas)
         
-        bmtlCanvas = tk.Canvas(bottomCanvas,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
-        bmtlCanvas.pack(side=tk.LEFT, fill=tk.X, expand=1)
-        self.initMiddleLeft(bmtlCanvas)
+        timeCanvas = tk.Canvas(footerCanvas,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
+        timeCanvas.pack(side=tk.LEFT, fill=tk.X, expand=1)
+        self.initTimeWidget(timeCanvas)
 
-        bmrCanvas = tk.Canvas(bottomCanvas,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
-        bmrCanvas.pack(side=tk.RIGHT, fill=tk.X, expand=1)
-        self.initMiddleRight(bmrCanvas)
+        conditionCanvas = tk.Canvas(footerCanvas,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
+        conditionCanvas.pack(side=tk.RIGHT, fill=tk.X, expand=1)
+        self.initConditionWidget(conditionCanvas)
 
-    def init_roomUI(self, master) :
+    def initRoomWidget(self, master) :
         nameLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.room["name"], font=("Helvetica", 15,"bold"))
         nameLabel.pack(anchor=tk.NW)
+
         temperatureLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.room["temperature"], font=("Helvetica", 30,"bold"))
         temperatureLabel.pack(side=tk.LEFT)
+
         humidityLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.room["humidity"], font=("Helvetica", 15,"bold"))
         humidityLabel.pack(anchor=tk.SW)
         pressureLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.room["pressure"], font=("Helvetica", 15,"bold"))
-        pressureLabel.pack(side=tk.LEFT)
+        pressureLabel.pack(anchor=tk.SW)
+        airQualityLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.room["air_quality"], font=("Helvetica", 12,"bold"))
+        airQualityLabel.pack(anchor=tk.SW)
 
-    def init_outsideUI(self, master) :
+    def initOutsideWidget(self, master) :
         nameLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.outside["name"], font=("Helvetica", 15,"bold"))
         nameLabel.pack(anchor=tk.NE)
+
         temperatureLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.outside["temperature"], font=("Helvetica", 30,"bold"))
         temperatureLabel.pack(side=tk.RIGHT)
+
         humidityLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.outside["humidity"], font=("Helvetica", 15,"bold"))
         humidityLabel.pack(anchor=tk.SE)
         windLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.outside["wind"], font=("Helvetica", 15,"bold"))
         windLabel.pack(anchor=tk.SE)
+        airQualityLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.outside["air_quality"], font=("Helvetica", 15,"bold"))
+        airQualityLabel.pack(anchor=tk.SE)
 
-    def initMiddleRight(self, master) :
+    def initConditionWidget(self, master) :
         detailCanvas = tk.Canvas(master, bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
         detailCanvas.pack(side=tk.RIGHT, fill=tk.X, expand=1)
 
-        descriptionLabel = tk.Label(detailCanvas, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.weather["description"], font=("Helvetica", 15,"bold"))
-        descriptionLabel.pack()
+        conditionLabel = tk.Label(detailCanvas, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.outside["condition"], font=("Helvetica", 15,"bold"))
+        conditionLabel.pack()
 
-        airQualityLabel = tk.Label(detailCanvas, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.weather["air_quality"], font=("Helvetica", 12,"bold"))
-        airQualityLabel.pack()
+        sunTimeLabel = tk.Label(detailCanvas, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.outside["sun_time"], font=("Helvetica", 12,"bold"))
+        sunTimeLabel.pack()
         
         self.imageIcon = self.imageIcon.resize((100,100))
         self.imagePhoto = ImageTk.PhotoImage(self.imageIcon)
@@ -136,7 +144,7 @@ class WeatherUI(tk.Tk) :
         label1 = tk.Label(iconCanvas, image=self.imagePhoto, bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
         label1.pack()
 
-    def initMiddleLeft(self, master):
+    def initTimeWidget(self, master):
         hour = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.time['hour'], font=("Times", 35,"bold") )
         hour.pack(anchor=tk.N, fill=tk.X, expand=1)
 

@@ -23,7 +23,14 @@ STOP_FLAG = False
 
 SENSOR_REFRESH_TIME = 10 # 10 seconds
 
+# TODO: find lat @ lon
+# http://api.openweathermap.org/geo/1.0/direct?q={city name},{state code},{country code}&limit={limit}&appid={API key}
+
+# TODO: air quality
+# https://api.openweathermap.org/data/2.5/air_pollution?lat=<lat>&lon=<lon>&appid=<apikey>
+
 def get_api_openweather_data(location, api_key):
+    # TODO: change request to replace cityid by lat & lon
     url = "http://api.openweathermap.org/data/2.5/weather?id={}&units=metric&lang=fr&appid={}".format(location, api_key)
     r = requests.get(url, headers={'Cache-Control': 'no-cache'}, timeout = 30, verify = False )
     return r.json()
@@ -45,7 +52,7 @@ def inside_room_data(window):
                 if "temperature" in room_data: window.room["temperature"].set("{} °C".format(room_data["temperature"]))
                 if "humidity" in room_data: window.room["humidity"].set("{} %".format(room_data["humidity"]))
                 if "pressure" in room_data: window.room["pressure"].set("{}".format(room_data["pressure"]))
-                if "air_quality_text" in room_data: window.weather["air_quality"].set("Inside Air: {}".format(room_data["air_quality_text"]))
+                if "air_quality_text" in room_data: window.room["air_quality"].set("Inside Air: {}".format(room_data["air_quality_text"]))
                 time.sleep(SENSOR_REFRESH_TIME)
         except Exception as e :
             if not STOP_FLAG:
