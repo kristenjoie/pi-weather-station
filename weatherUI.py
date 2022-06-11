@@ -17,7 +17,6 @@ class WeatherUI(tk.Tk) :
         super().__init__()
         self.attributes("-fullscreen",True)
         self.title("Pi Weather Station")
-        # self.configure(background='')
         self.bind("<Double-Button-1>", self.exit)
         self.bind("<Button-1>", self.turn_on_video_output) # to turn off video_output, we use cron table 
 
@@ -56,7 +55,7 @@ class WeatherUI(tk.Tk) :
         #---------------------------------------------------------------
         self.imageBackground = Image.open('icons/background.jpg')
         self.imageIcon = Image.open("icons/10d@2x.png")
-       
+
         self.initBackground()
         self.initFooterCanvas()
         
@@ -73,8 +72,8 @@ class WeatherUI(tk.Tk) :
         self.imageBackground = self.imageBackground.resize((int(img_w*factor) , int(img_h*factor)))
         self.imagePhotoBackground = ImageTk.PhotoImage(self.imageBackground)
         
-        label0 = tk.Label(backgroundCanvas, image=self.imagePhotoBackground, bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
-        label0.pack()
+        imageBackgroundLabel = tk.Label(backgroundCanvas, image=self.imagePhotoBackground, bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
+        imageBackgroundLabel.pack()
 
 
     def initFooterCanvas(self):
@@ -104,9 +103,9 @@ class WeatherUI(tk.Tk) :
         temperatureLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.room["temperature"], font=("Helvetica", 30,"bold"))
         temperatureLabel.pack(side=tk.LEFT)
 
-        humidityLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.room["humidity"], font=("Helvetica", 15,"bold"))
+        humidityLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.room["humidity"], font=("Helvetica", 12,"bold"))
         humidityLabel.pack(anchor=tk.SW)
-        pressureLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.room["pressure"], font=("Helvetica", 15,"bold"))
+        pressureLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.room["pressure"], font=("Helvetica", 12,"bold"))
         pressureLabel.pack(anchor=tk.SW)
         airQualityLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.room["air_quality"], font=("Helvetica", 12,"bold"))
         airQualityLabel.pack(anchor=tk.SW)
@@ -118,31 +117,31 @@ class WeatherUI(tk.Tk) :
         temperatureLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.outside["temperature"], font=("Helvetica", 30,"bold"))
         temperatureLabel.pack(side=tk.RIGHT)
 
-        humidityLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.outside["humidity"], font=("Helvetica", 15,"bold"))
+        humidityLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.outside["humidity"], font=("Helvetica", 12,"bold"))
         humidityLabel.pack(anchor=tk.SE)
-        windLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.outside["wind"], font=("Helvetica", 15,"bold"))
+        windLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.outside["wind"], font=("Helvetica", 12,"bold"))
         windLabel.pack(anchor=tk.SE)
-        airQualityLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.outside["air_quality"], font=("Helvetica", 15,"bold"))
+        airQualityLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.outside["air_quality"], font=("Helvetica", 12,"bold"))
         airQualityLabel.pack(anchor=tk.SE)
 
     def initConditionWidget(self, master) :
         detailCanvas = tk.Canvas(master, bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
-        detailCanvas.pack(side=tk.RIGHT, fill=tk.X, expand=1)
+        detailCanvas.pack(side=tk.RIGHT)
 
-        conditionLabel = tk.Label(detailCanvas, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.outside["condition"], font=("Helvetica", 15,"bold"))
+        conditionLabel = tk.Label(detailCanvas, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.outside["condition"], font=("Helvetica", 25,"bold"))
         conditionLabel.pack()
 
-        sunTimeLabel = tk.Label(detailCanvas, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.outside["sun_time"], font=("Helvetica", 12,"bold"))
+        sunTimeLabel = tk.Label(detailCanvas, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.outside["sun_time"], font=("Helvetica", 15,"bold"))
         sunTimeLabel.pack()
         
         self.imageIcon = self.imageIcon.resize((100,100))
         self.imagePhoto = ImageTk.PhotoImage(self.imageIcon)
 
         iconCanvas = tk.Canvas(master, bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
-        iconCanvas.pack(side=tk.RIGHT, fill=tk.X, expand=1)
+        iconCanvas.pack(side=tk.RIGHT)
 
-        label1 = tk.Label(iconCanvas, image=self.imagePhoto, bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
-        label1.pack()
+        self.imageIconLabel = tk.Label(iconCanvas, image=self.imagePhoto, bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
+        self.imageIconLabel.pack()
 
     def initTimeWidget(self, master):
         hour = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.time['hour'], font=("Times", 35,"bold") )
@@ -150,6 +149,12 @@ class WeatherUI(tk.Tk) :
 
         date = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.time['date'], font=("Helvetica", 12,"bold"))
         date.pack(anchor=tk.S)
+
+    def update_icon_image(self, path):
+        self.imageIcon = Image.open(path).resize((100,100))
+        self.imagePhoto = ImageTk.PhotoImage(self.imageIcon)
+        self.imageIconLabel.configure(image=self.imagePhoto)
+
 
     def turn_on_video_output(self, event):
         subprocess.call(["vcgencmd", "display_power", "1"], stdout=subprocess.DEVNULL)

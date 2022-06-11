@@ -12,6 +12,8 @@ import json
 parser = argparse.ArgumentParser()
 parser.add_argument("sensor_type", type=str,
                     help="display a square of a given number")
+parser.add_argument("--server_port", type=int,
+                    help="server port to use", default=80)
 parser.add_argument("-t", "--temperature_offset", type=int, default=0,
                     help="Add an Offset to temperature")
 parser.add_argument("-l", "--locale", type=str, default="en_GB",
@@ -170,4 +172,4 @@ def home():
     """.format(temp=temperature)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80)
+    app.run(host='0.0.0.0', port=args.server_port)

@@ -4,5 +4,13 @@
     "MEDIOCRE": "Mediocre",
     "MODERATE": "Moderate",
     "GOOD": "GOOD",
-    "VERY_GOOD": "Very Poor"
+    "VERY_GOOD": "Very Poor",
+
+    "NORTH": "N",
+    "WEST": "W",
+    "EAST": "S",
+    "SOUTH": "S",
+
+    "SUNRISE": "Sunrise",
+    "SUNSET": "Sunset"
 }

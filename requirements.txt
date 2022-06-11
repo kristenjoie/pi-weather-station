@@ -3,4 +3,4 @@ Flask
 Pillow
 influxdb
 board
-# bme680
+bme680
