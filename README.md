@@ -76,6 +76,14 @@ There are optionals arguments:
 It's preferable to use latitude and longitude.
 - `--locale`: to change the locale. If you need can add translation file in folder [./locales](./locales/)
 
+### InfluxDB:
+To store data and use it in an external tools, we use [InfluxDB](https://www.influxdata.com/).  
+
+Add arguments to the run command:
+```
+ --influxdb --influxdb_host localhost --influxdb_port 8086 --influxdb_database weather
+```
+
 ## 📖 More info
 Sensor data will be updated every 10s
 API data will be fetched every 5 minutes.

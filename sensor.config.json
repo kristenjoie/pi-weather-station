@@ -2,11 +2,13 @@
     {
         "name": "Living Room",
         "ip": "192.168.1.28",
-        "port": "80"
+        "port": "80",
+        "influxdb_source_name": "salon"
     },
     {
         "name": "Bedroom",
         "ip": "192.168.1.3",
-        "port": "80"
+        "port": "80",
+        "influxdb_source_name": "bedroom"
     }
 ]

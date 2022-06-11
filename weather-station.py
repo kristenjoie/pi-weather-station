@@ -18,6 +18,11 @@ parser.add_argument("-l", "--locale", type=str, default="en_GB", help="Choose lo
 parser.add_argument("--lat", type=str, help="location latitude")
 parser.add_argument("--lon", type=str, help="location longitude")
 parser.add_argument("--city", type=str, help="location city name. Format is {city name},{state code},{country code}")
+parser.add_argument("--influxdb", action='store_true', help="Use InfluxDB")
+parser.add_argument("--influxdb_host", type=str, help="InfluxDB host")
+parser.add_argument("--influxdb_port", type=int, help="InfluxDB port")
+parser.add_argument("--influxdb_database", type=str, help="InfluxDB database")
+
 args = parser.parse_args()
 
 ##
@@ -72,7 +77,7 @@ def get_sensor_data(ip, port):
     r = requests.get(url, headers={'Cache-Control': 'no-cache'}, timeout = 10)
     return r.json()
     # to debug
-    # return json.loads('{"type":"bmp", "temperature":20, "humidity":68.9, "pressure":1201, "air_quality_text":"GOOD"}')
+    # return json.loads('{"type":"bmp", "temperature":20, "humidity":68.9, "pressure":1201, "score": 50, "air_quality_text":"GOOD"}')
 
 ##
 # Update Display
@@ -81,12 +86,25 @@ def update_room_data(window):
     while True:
         for room in SENSOR_LIST :
             room_data = get_sensor_data(room["ip"], room["port"])
-            window.room["name"].set("{}".format(room["name"]))
+            window.room["name"].set("{}".format(room["name"].capitalize()))
             # if sensor does not send temperature, we do not update the display, so there may be some inconsistencies
-            if "temperature" in room_data: window.room["temperature"].set("{} °C".format(room_data["temperature"]))
-            if "humidity" in room_data: window.room["humidity"].set("{} %".format(room_data["humidity"]))
-            if "pressure" in room_data: window.room["pressure"].set("{}".format(room_data["pressure"]))
-            if "air_quality_text" in room_data: window.room["air_quality"].set("{}".format(room_data["air_quality_text"].capitalize()))
+            temperature, humidity, pressure, air_quality_score= None, None, None, None
+            if "temperature" in room_data: 
+                temperature = room_data["temperature"]
+                window.room["temperature"].set("{} °C".format(temperature))
+            if "humidity" in room_data: 
+                humidity = room_data["humidity"]
+                window.room["humidity"].set("{} %".format(humidity))
+            if "pressure" in room_data: 
+                pressure = room_data["pressure"]
+                window.room["pressure"].set("{}".format(pressure))
+            if "air_quality_text" in room_data:
+                window.room["air_quality"].set("{}".format(room_data["air_quality_text"].capitalize()))
+            if "air_quality_score" in room_data:
+                air_quality_score = room_data["score"]
+
+            if args.influxdb:
+                populate_influxdb("measurement", room["influxdb_source_name"], type=room_data["type"], temperature=temperature, humidity=humidity, pressure=pressure, air_quality_score=air_quality_score)
             time.sleep(SENSOR_REFRESH_TIME)
 
 def update_hour(window):
@@ -106,7 +124,7 @@ def update_api_data(window):
     while True:
         weather_data = get_api_current_weather()
         pollution_data = get_api_pollution()
-        window.outside["name"].set("{}".format(weather_data["name"]))
+        window.outside["name"].set("{}".format(weather_data["name"].capitalize()))
         window.outside["temperature"].set("{} °C".format("%.1f" % weather_data["main"]["temp"]))
         window.outside["humidity"].set("{} %".format("%.1f" % weather_data["main"]["humidity"]))
         
@@ -117,6 +135,12 @@ def update_api_data(window):
         window.outside["sun_time"].set("{}".format(format_sun_time(weather_data)))
 
         set_weather_icon(window, weather_data['weather'][0]['icon'])
+        
+        clouds = 0 if 'clouds' not in weather_data else weather_data["clouds"]["all"]
+        if args.influxdb:
+            populate_influxdb("temp", "web",temperature=weather_data["main"]["temp"],
+                humidity= weather_data["main"]["humidity"], wind_speed=wind_speed, wind_direction=wind_direction, clouds=clouds)
+        
         time.sleep(API_REFRESH_TIME)
 
 def set_weather_icon(window, icon_name):
@@ -160,6 +184,33 @@ def format_air_quality(pollution):
     elif pollution["list"][0]["main"]["aqi"] == 3: return TXT["MEDIOCRE"]
     elif pollution["list"][0]["main"]["aqi"] == 2: return TXT["MODERATE"]
     elif pollution["list"][0]["main"]["aqi"] == 1 : return TXT["GOOD"]
+
+##
+# Influxdb
+# #
+if args.influxdb:
+    from influxdb import InfluxDBClient
+    client = InfluxDBClient(host=args.influxdb_host, port=args.influxdb_port, database=args.influxdb_database, timeout=30)
+
+def populate_influxdb(measurement, source, temperature, type=None, humidity = None, pressure = None, air_quality_score = None, wind_speed = None, wind_direction = None, clouds = None):
+    json_body = [
+        { 
+            "measurement": measurement,
+            "tags": {
+                "source": source
+            },
+            "time": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime()),
+            "fields": {
+                "temperature": temperature,
+            }
+        }
+    ]
+    if type is not None :
+        json_body[0]["tags"]["type"] = type
+    list_item = {"humidity":humidity, "pressure":pressure, "air_quality_score":air_quality_score, "wind_speed":wind_speed, "wind_direction":wind_direction, "clouds":clouds}
+    for item in list_item:
+        if list_item[item] is not None: json_body[0]["fields"][item] = list_item[item]
+    client.write_points(json_body)
 
 ##
 # TKinter Canvas
