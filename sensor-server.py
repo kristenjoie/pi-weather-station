@@ -8,20 +8,21 @@
 import time
 import argparse
 import json
+import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument("sensor_type", type=str,
                     help="display a square of a given number")
 parser.add_argument("--server_port", type=int,
-                    help="server port to use", default=80)
-parser.add_argument("-t", "--temperature_offset", type=int, default=0,
+                    help="server port to use", default=5000)
+parser.add_argument("-t", "--temperature_offset", type=float, default=0,
                     help="Add an Offset to temperature")
 parser.add_argument("-l", "--locale", type=str, default="en_GB",
                     help="Choose locale")
 args = parser.parse_args()
 
 # load translation file
-TXT = json.loads(open("locales/{}.json".format(args.locale)).read())
+TXT = json.loads(open("{}/locales/{}.json".format(os.path.dirname(os.path.realpath(__file__)), args.locale)).read())
 
 if args.sensor_type == 'bmp':
     import adafruit_bmp280
@@ -95,7 +96,7 @@ elif args.sensor_type == 'bme':
 
                 # Calculate air_quality_score.
                 air_quality_score = hum_score + gas_score
-                time.sleep(5)
+                time.sleep(1)
 
     def get_air_quality():
         score = (100-air_quality_score)*5
@@ -129,12 +130,12 @@ app = Flask(__name__)
 def temp():
     if ( args.sensor_type == 'bmp'):
         return jsonify(type="bmp",
-                   temperature=float("%.1f" % sensor.temperature + args.temperature_offset),
+                   temperature=float("%.1f" % (sensor.temperature + args.temperature_offset)),
                    pressure=float("%.1f" % sensor.pressure))
     elif (args.sensor_type == 'bme'):
         gas, air_quality, score, air_quality_text = get_air_quality()
         return jsonify(type="bme",
-                   temperature=float("%.1f" % sensor.data.temperature + args.temperature_offset),
+                   temperature=float("%.1f" % (sensor.data.temperature + args.temperature_offset)),
                    humidity=float("%.1f" % sensor.data.humidity),
                    gas_ref= float("%.1f" % gas_baseline),
                    gas_sensor=float("%.1f" % gas),
@@ -152,9 +153,9 @@ def set(gas):
 @app.route('/home') # just dislpay temperature in full screen
 def home():
     if (args.sensor_type == 'bmp'):
-        temperature= "%.1f" % sensor.temperature + args.temperature_offset
+        temperature= "%.1f" % (sensor.temperature + args.temperature_offset)
     elif (args.sensor_type == 'bme'):
-        temperature = "%.1f" % sensor.data.temperature + args.temperature_offset
+        temperature = "%.1f" % (sensor.data.temperature + args.temperature_offset)
     
     return """
     <style>

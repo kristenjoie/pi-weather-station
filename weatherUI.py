@@ -8,6 +8,7 @@ from concurrent.futures import thread
 import tkinter as tk
 from PIL import Image, ImageTk
 import subprocess
+import os
 
 BACKGROUND_COLOR = "#101012"
 FOREGROUND_COLOR = "#adadad"
@@ -53,8 +54,8 @@ class WeatherUI(tk.Tk) :
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
         # #
         #---------------------------------------------------------------
-        self.imageBackground = Image.open('icons/background.jpg')
-        self.imageIcon = Image.open("icons/10d@2x.png")
+        self.imageBackground = Image.open(os.path.dirname(os.path.realpath(__file__)) + '/icons/background.jpg')
+        self.imageIcon = Image.open(os.path.dirname(os.path.realpath(__file__))+"/icons/10d@2x.png")
 
         self.initBackground()
         self.initFooterCanvas()

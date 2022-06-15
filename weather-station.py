@@ -28,7 +28,7 @@ args = parser.parse_args()
 ##
 #  load config file
 # #
-SENSOR_LIST = json.loads(open("sensor.config.json").read())
+SENSOR_LIST = json.loads(open(os.path.dirname(os.path.realpath(__file__)) + "/sensor.config.json").read())
 
 ##
 # LOCALES
@@ -37,7 +37,7 @@ LOCALE = args.locale
 LANGUAGE = args.locale[:2]
 locale.setlocale(locale.LC_TIME, LOCALE)
 # load translation file
-TXT = json.loads(open("locales/{}.json".format(LOCALE)).read())
+TXT = json.loads(open("{}/locales/{}.json".format(os.path.dirname(os.path.realpath(__file__)), LOCALE)).read())
 
 ##
 # Refresh time
@@ -144,7 +144,7 @@ def update_api_data(window):
         time.sleep(API_REFRESH_TIME)
 
 def set_weather_icon(window, icon_name):
-    path = 'icons/{}@2x.png'.format(icon_name)
+    path = '{}/icons/{}@2x.png'.format(os.path.dirname(os.path.realpath(__file__)), icon_name)
     if not os.path.exists(path):
         download_api_icon(icon_name, path)
     window.update_icon_image(path)
