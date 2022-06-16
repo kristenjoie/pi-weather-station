@@ -100,11 +100,11 @@ def update_room_data(window):
                 window.room["pressure"].set("{}".format(pressure))
             if "air_quality_text" in room_data:
                 window.room["air_quality"].set("{}".format(room_data["air_quality_text"].capitalize()))
-            if "air_quality_score" in room_data:
+            if "score" in room_data:
                 air_quality_score = room_data["score"]
 
             if args.influxdb:
-                populate_influxdb("measurement", room["influxdb_source_name"], type=room_data["type"], temperature=temperature, humidity=humidity, pressure=pressure, air_quality_score=air_quality_score)
+                populate_influxdb("temp", room["influxdb_source_name"], type=room_data["type"], temperature=temperature, humidity=humidity, pressure=pressure, air_quality_score=air_quality_score)
             time.sleep(SENSOR_REFRESH_TIME)
 
 def update_hour(window):
@@ -139,7 +139,7 @@ def update_api_data(window):
         clouds = 0 if 'clouds' not in weather_data else weather_data["clouds"]["all"]
         if args.influxdb:
             populate_influxdb("temp", "web",temperature=weather_data["main"]["temp"],
-                humidity= weather_data["main"]["humidity"], wind_speed=wind_speed, wind_direction=wind_direction, clouds=clouds)
+                humidity= weather_data["main"]["humidity"], wind_speed=wind_speed, wind_direction=weather_data['wind']['deg'], clouds=clouds)
         
         time.sleep(API_REFRESH_TIME)
 
@@ -199,7 +199,7 @@ def populate_influxdb(measurement, source, temperature, type=None, humidity = No
             "tags": {
                 "source": source
             },
-            "time": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime()),
+            "time": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
             "fields": {
                 "temperature": temperature,
             }
@@ -209,7 +209,10 @@ def populate_influxdb(measurement, source, temperature, type=None, humidity = No
         json_body[0]["tags"]["type"] = type
     list_item = {"humidity":humidity, "pressure":pressure, "air_quality_score":air_quality_score, "wind_speed":wind_speed, "wind_direction":wind_direction, "clouds":clouds}
     for item in list_item:
-        if list_item[item] is not None: json_body[0]["fields"][item] = list_item[item]
+        if list_item[item] is not None: 
+            json_body[0]["fields"][item] = float(list_item[item])
+            if item == "clouds"or item == "wind_direction":
+                 json_body[0]["fields"][item] = int(json_body[0]["fields"][item])
     client.write_points(json_body)
 
 ##
