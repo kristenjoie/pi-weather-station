@@ -85,26 +85,29 @@ def get_sensor_data(ip, port):
 def update_room_data(window):
     while True:
         for room in SENSOR_LIST :
-            room_data = get_sensor_data(room["ip"], room["port"])
-            window.room["name"].set("{}".format(room["name"].capitalize()))
-            # if sensor does not send temperature, we do not update the display, so there may be some inconsistencies
-            temperature, humidity, pressure, air_quality_score= None, None, None, None
-            if "temperature" in room_data: 
-                temperature = room_data["temperature"]
-                window.room["temperature"].set("{} °C".format(temperature))
-            if "humidity" in room_data: 
-                humidity = room_data["humidity"]
-                window.room["humidity"].set("{} %".format(humidity))
-            if "pressure" in room_data: 
-                pressure = room_data["pressure"]
-                window.room["pressure"].set("{}".format(pressure))
-            if "air_quality_text" in room_data:
-                window.room["air_quality"].set("{}".format(room_data["air_quality_text"].capitalize()))
-            if "score" in room_data:
-                air_quality_score = room_data["score"]
+            try:
+                room_data = get_sensor_data(room["ip"], room["port"])
+                window.room["name"].set("{}".format(room["name"].capitalize()))
+                # if sensor does not send temperature, we do not update the display, so there may be some inconsistencies
+                temperature, humidity, pressure, air_quality_score= None, None, None, None
+                if "temperature" in room_data: 
+                    temperature = room_data["temperature"]
+                    window.room["temperature"].set("{} °C".format(temperature))
+                if "humidity" in room_data: 
+                    humidity = room_data["humidity"]
+                    window.room["humidity"].set("{} %".format(humidity))
+                if "pressure" in room_data: 
+                    pressure = room_data["pressure"]
+                    window.room["pressure"].set("{}".format(pressure))
+                if "air_quality_text" in room_data:
+                    window.room["air_quality"].set("{}".format(room_data["air_quality_text"].capitalize()))
+                if "score" in room_data:
+                    air_quality_score = room_data["score"]
 
-            if args.influxdb:
-                populate_influxdb("temp", room["influxdb_source_name"], type=room_data["type"], temperature=temperature, humidity=humidity, pressure=pressure, air_quality_score=air_quality_score)
+                if args.influxdb:
+                    populate_influxdb("temp", room["influxdb_source_name"], type=room_data["type"], temperature=temperature, humidity=humidity, pressure=pressure, air_quality_score=air_quality_score)
+            except :
+                pass
             time.sleep(SENSOR_REFRESH_TIME)
 
 def update_hour(window):
