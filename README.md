@@ -4,7 +4,9 @@ A Weather Station for the Raspberry Pi with bme680 and bmp280 sensors.
 Written in Python with TKinter and Flask.  
 To get more weather data, we use [OpenWeather](https://openweathermap.org)
 
-![screenshot](screenshot.png)
+| Current Weather | Weather Forecast |
+| --- | --- |
+|![screenshot](screenshot.png) | ![screenshot](screenshot_forecast.png) |
 
 ## 🚥 Pre-requisites
 

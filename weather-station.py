@@ -8,9 +8,11 @@ import requests
 import locale
 import os
 import time
+import datetime
 import threading
 import json
 import argparse
+import pandas
 
 parser = argparse.ArgumentParser()
 parser.add_argument("api_key", type=str, help="OpenWeather Map API key")
@@ -34,16 +36,18 @@ SENSOR_LIST = json.loads(open(os.path.dirname(os.path.realpath(__file__)) + "/se
 # LOCALES
 # #
 LOCALE = args.locale
-LANGUAGE = args.locale[:2]
 locale.setlocale(locale.LC_TIME, LOCALE)
+LOCALE = LOCALE.split(".")[0]
+LANGUAGE = LOCALE[:2]
 # load translation file
 TXT = json.loads(open("{}/locales/{}.json".format(os.path.dirname(os.path.realpath(__file__)), LOCALE)).read())
 
 ##
 # Refresh time
 # # 
-SENSOR_REFRESH_TIME = 10 # 10 seconds
+SENSOR_REFRESH_TIME = 5 # 5 seconds
 API_REFRESH_TIME = 300 # 5 minutes
+API_FORECAST_REFRESH_TIME = 10800 # 3 hours
 
 ##
 # API OPENWEATHER
@@ -65,6 +69,11 @@ def get_api_current_weather():
 
 def get_api_pollution():
     url = "http://api.openweathermap.org/data/2.5/air_pollution?lat={}&lon={}&appid={}".format(API_LAT, API_LON, API_KEY)
+    r = requests.get(url, headers={'Cache-Control': 'no-cache'}, timeout = 30, verify = False )
+    return r.json()
+
+def get_api_forecast_weather():
+    url = "http://api.openweathermap.org/data/2.5/forecast?lat={}&lon={}&units=metric&lang={}&appid={}".format(API_LAT, API_LON, LANGUAGE, API_KEY)
     r = requests.get(url, headers={'Cache-Control': 'no-cache'}, timeout = 30, verify = False )
     return r.json()
 
@@ -98,7 +107,7 @@ def update_room_data(window):
                     window.room["humidity"].set("{} %".format(humidity))
                 if "pressure" in room_data: 
                     pressure = room_data["pressure"]
-                    window.room["pressure"].set("{}".format(pressure))
+                    window.room["pressure"].set("{} mb".format(pressure))
                 if "air_quality_text" in room_data:
                     window.room["air_quality"].set("{}".format(room_data["air_quality_text"].capitalize()))
                 if "score" in room_data:
@@ -109,6 +118,14 @@ def update_room_data(window):
             except :
                 pass
             time.sleep(SENSOR_REFRESH_TIME)
+        switchBetweenCurrentAndForecast(window, SENSOR_REFRESH_TIME*2)
+
+def switchBetweenCurrentAndForecast(window, wait_time):
+    window.hideSensorFooter()
+    window.showForecastFooter()
+    time.sleep(wait_time)
+    window.hideForecastFooter()
+    window.showSensorFooter()
 
 def update_hour(window):
     window.time["hour"].set(time.strftime("%H:%M:%S", time.localtime()))
@@ -125,32 +142,83 @@ def update_api_data(window):
             print("We found lat:{} and lon:{} for city:{}".format(API_LAT, API_LON, API_CITY))
 
     while True:
-        weather_data = get_api_current_weather()
-        pollution_data = get_api_pollution()
-        window.outside["name"].set("{}".format(weather_data["name"].capitalize()))
-        window.outside["temperature"].set("{} °C".format("%.1f" % weather_data["main"]["temp"]))
-        window.outside["humidity"].set("{} %".format("%.1f" % weather_data["main"]["humidity"]))
-        
-        wind_speed, wind_direction = format_wind_info(weather_data)
-        window.outside["wind"].set("{} km/h {}".format(wind_speed, wind_direction))
-        window.outside["air_quality"].set("{}".format(format_air_quality(pollution_data).capitalize()))
-        window.outside["condition"].set("{}".format(weather_data['weather'][0]['description'].title()))
-        window.outside["sun_time"].set("{}".format(format_sun_time(weather_data)))
+        try :
+            weather_data = get_api_current_weather()
+            pollution_data = get_api_pollution()
+            window.outside["name"].set("{}".format(weather_data["name"].capitalize()))
+            window.outside["temperature"].set("{} °C".format("%.1f" % weather_data["main"]["temp"]))
+            window.outside["humidity"].set("{} %".format("%.1f" % weather_data["main"]["humidity"]))
+            
+            wind_speed, wind_direction = format_wind_info(weather_data)
+            window.outside["wind"].set("{} km/h {}".format(wind_speed, wind_direction))
+            window.outside["air_quality"].set("{}".format(format_air_quality(pollution_data).capitalize()))
+            window.outside["condition"].set("{}".format(weather_data['weather'][0]['description'].title()))
+            window.outside["sun_time"].set("{}".format(format_sun_time(weather_data)))
 
-        set_weather_icon(window, weather_data['weather'][0]['icon'])
-        
-        clouds = 0 if 'clouds' not in weather_data else weather_data["clouds"]["all"]
-        if args.influxdb:
-            populate_influxdb("temp", "web",temperature=weather_data["main"]["temp"],
-                humidity= weather_data["main"]["humidity"], wind_speed=wind_speed, wind_direction=weather_data['wind']['deg'], clouds=clouds)
-        
+            set_weather_icon(window, weather_data['weather'][0]['icon'])
+            
+            clouds = 0 if 'clouds' not in weather_data else weather_data["clouds"]["all"]
+            if args.influxdb:
+                populate_influxdb("temp", "web",temperature=weather_data["main"]["temp"],
+                    humidity= weather_data["main"]["humidity"], wind_speed=wind_speed, wind_direction=weather_data['wind']['deg'], clouds=clouds)
+        except:
+            pass
         time.sleep(API_REFRESH_TIME)
 
+def update_api_forecast(window):
+    global API_LAT, API_LON
+    if API_LAT is None:
+        if API_CITY is None:
+            raise ValueError("You must set latitude, longitude or city name")
+        else:
+            API_LAT, API_LON = get_api_location()
+            print("We found lat:{} and lon:{} for city:{}".format(API_LAT, API_LON, API_CITY))
+
+    img =  [None] * len(window.currentForecast)
+    while True:
+        try:
+            forecast_data = get_api_forecast_weather()
+            df = pandas.DataFrame(forecast_data["list"]) 
+            # for the current day
+            for index, item in enumerate(window.currentForecast):
+                item.title.set("{}H".format(time.strftime("%H", time.gmtime(df["dt"][1+index]))))
+                img[index] = set_forecast_value(item, df.iloc[1+index])
+
+            # for D+1
+            forecast_img = [None] * 6
+            df.set_index('dt', inplace=True)
+            forecast_img[0] = set_forecast_value(window.dayonenine, df.loc[datetime.datetime.strptime((datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d 09:00:00"), "%Y-%m-%d %H:%M:%S").replace(tzinfo=datetime.timezone.utc).timestamp()])
+            forecast_img[1] = set_forecast_value(window.dayonefifteen, df.loc[datetime.datetime.strptime((datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d 15:00:00"), "%Y-%m-%d %H:%M:%S").replace(tzinfo=datetime.timezone.utc).timestamp()])
+            forecast_img[2] = set_forecast_value(window.dayonetwentyone, df.loc[datetime.datetime.strptime((datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d 21:00:00"), "%Y-%m-%d %H:%M:%S").replace(tzinfo=datetime.timezone.utc).timestamp()])
+            
+            # for D+2
+            forecast_img[3] = set_forecast_value(window.daytwonine, df.loc[datetime.datetime.strptime((datetime.datetime.now() + datetime.timedelta(days=2)).strftime("%Y-%m-%d 09:00:00"), "%Y-%m-%d %H:%M:%S").replace(tzinfo=datetime.timezone.utc).timestamp()])
+            forecast_img[4] = set_forecast_value(window.daytwofifteen, df.loc[datetime.datetime.strptime((datetime.datetime.now() + datetime.timedelta(days=2)).strftime("%Y-%m-%d 15:00:00"), "%Y-%m-%d %H:%M:%S").replace(tzinfo=datetime.timezone.utc).timestamp()])
+            forecast_img[5] = set_forecast_value(window.daytwotwentyone, df.loc[datetime.datetime.strptime((datetime.datetime.now() + datetime.timedelta(days=2)).strftime("%Y-%m-%d 21:00:00"), "%Y-%m-%d %H:%M:%S").replace(tzinfo=datetime.timezone.utc).timestamp()])
+        except:
+            pass
+        time.sleep(API_FORECAST_REFRESH_TIME)
+
+def set_forecast_value(item, dataframe):
+    item.temp.set("{} °C".format("%.1f" % dataframe["main"]["temp"]))
+    if "rain" in dataframe and pandas.notnull(dataframe["rain"]) and "3h" in dataframe["rain"]:
+        item.rain.set("{} mm".format("%.1f" % dataframe["rain"]["3h"]))
+    else:
+        item.rain.set("0 mm")
+    path = download_icon(dataframe["weather"][0]["icon"])
+    img = item.buildForecastImageObject(path)
+    item.setIcon(img)
+    return img
+
 def set_weather_icon(window, icon_name):
+    path = download_icon(icon_name)
+    window.update_icon_image(path)
+
+def download_icon(icon_name):
     path = '{}/icons/{}@2x.png'.format(os.path.dirname(os.path.realpath(__file__)), icon_name)
     if not os.path.exists(path):
         download_api_icon(icon_name, path)
-    window.update_icon_image(path)
+    return path
 
 def format_sun_time(weather):
     sunrise = weather["sys"]["sunrise"]
@@ -234,5 +302,9 @@ if __name__ == '__main__':
     # update API info
     api_t = threading.Thread(target=update_api_data, args=(window, ), daemon=True)
     api_t.start()
+
+    # update API Forecast Info
+    api_forecast_t = threading.Thread(target=update_api_forecast, args=(window, ), daemon=True)
+    api_forecast_t.start()
 
     window.mainloop()

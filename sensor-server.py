@@ -22,7 +22,7 @@ parser.add_argument("-l", "--locale", type=str, default="en_GB",
 args = parser.parse_args()
 
 # load translation file
-TXT = json.loads(open("{}/locales/{}.json".format(os.path.dirname(os.path.realpath(__file__)), args.locale)).read())
+TXT = json.loads(open("{}/locales/{}.json".format(os.path.dirname(os.path.realpath(__file__)), args.locale.split(".")[0])).read())
 
 if args.sensor_type == 'bmp':
     import adafruit_bmp280

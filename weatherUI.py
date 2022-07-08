@@ -4,7 +4,6 @@
 # UI
 # #
 
-from concurrent.futures import thread
 import tkinter as tk
 from PIL import Image, ImageTk
 import subprocess
@@ -49,7 +48,7 @@ class WeatherUI(tk.Tk) :
         # 
         #                               backgroundCanvas
         # 
-        # - - - - - - - - - - - - - - - footerCanvas- - - - - - - - - - - - - - -
+        # - - - - - - - - - - - - - - - sensorFooterCanvas- - - - - - - - - - - -
         # roomCanvas           timeCanvas      conditionCanvas        outsideCanvas
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
         # #
@@ -59,6 +58,7 @@ class WeatherUI(tk.Tk) :
 
         self.initBackground()
         self.initFooterCanvas()
+        self.initForecastFooterCanvas()
         
     def initBackground(self):
         
@@ -78,25 +78,88 @@ class WeatherUI(tk.Tk) :
 
 
     def initFooterCanvas(self):
-        footerCanvas = tk.Canvas(self,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
-        footerCanvas.pack(anchor=tk.S, fill=tk.X)
+        self.sensorFooterCanvas = tk.Canvas(self,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
+        self.sensorFooterCanvas.pack(anchor=tk.S, fill=tk.X)
 
-        roomCanvas = tk.Canvas(footerCanvas,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
+        roomCanvas = tk.Canvas(self.sensorFooterCanvas,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
         roomCanvas.pack(side=tk.LEFT, fill=tk.X, expand=1)
         self.initRoomWidget(roomCanvas)
         
-        outsideCanvas = tk.Canvas(footerCanvas,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
+        outsideCanvas = tk.Canvas(self.sensorFooterCanvas,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
         outsideCanvas.pack(side=tk.RIGHT, fill=tk.X, expand=1)
         self.initOutsideWidget(outsideCanvas)
         
-        timeCanvas = tk.Canvas(footerCanvas,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
+        timeCanvas = tk.Canvas(self.sensorFooterCanvas,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
         timeCanvas.pack(side=tk.LEFT, fill=tk.X, expand=1)
         self.initTimeWidget(timeCanvas)
 
-        conditionCanvas = tk.Canvas(footerCanvas,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
+        conditionCanvas = tk.Canvas(self.sensorFooterCanvas,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
         conditionCanvas.pack(side=tk.RIGHT, fill=tk.X, expand=1)
         self.initConditionWidget(conditionCanvas)
 
+    def showSensorFooter(self):
+        self.sensorFooterCanvas.pack(anchor=tk.S, fill=tk.BOTH)
+
+    def hideSensorFooter(self):
+        self.sensorFooterCanvas.pack_forget()
+
+        ##
+        # The GUI use those canvas:
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        # 
+        #                               backgroundCanvas
+        # 
+        # - - - - - - - - - - - - - - - initForecastFooterCanvas- - - - - - - - - 
+        # forecastFooterCanvas                      | dayOneCanvas | dayTwoCanvas
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+        # #
+        #---------------------------------------------------------------
+    def initForecastFooterCanvas(self):
+        self.forecastFooterCanvas = tk.Frame(self,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
+        self.currentDayCanvas = tk.Frame(self.forecastFooterCanvas,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
+        self.currentDayCanvas.pack(anchor=tk.S, side=tk.LEFT, fill=tk.X)
+        self.initCurrentForecast()
+        
+        self.dayTwoCanvas = tk.Frame(self.forecastFooterCanvas,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
+        self.dayTwoCanvas.pack(side=tk.RIGHT)
+        dayTwolabel = tk.Label(self.dayTwoCanvas, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, text="D+2", font=("Helvetica", 10,"bold"))
+        dayTwolabel.pack(anchor=tk.NW)
+        septwo = tk.Label(self.forecastFooterCanvas, fg=FOREGROUND_COLOR, bg=FOREGROUND_COLOR, text="|", font=("Helvetica",5,"bold"))
+        septwo.pack(side=tk.RIGHT, fill=tk.Y)
+        self.initDayTwoForecast()
+
+        self.dayOneCanvas = tk.Frame(self.forecastFooterCanvas,  bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
+        self.dayOneCanvas.pack(side=tk.RIGHT)
+        dayOnelabel = tk.Label(self.dayOneCanvas, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, text="D+1", font=("Helvetica", 10,"bold"))
+        dayOnelabel.pack(anchor=tk.NW)
+        sep = tk.Label(self.forecastFooterCanvas, fg=FOREGROUND_COLOR, bg=FOREGROUND_COLOR, text="|", font=("Helvetica", 5,"bold"))
+        sep.pack(side=tk.RIGHT, fill=tk.Y)
+        self.initDayOneForecast()
+
+    def initCurrentForecast(self):
+        one = ForecastWidget(self.currentDayCanvas, tk.LEFT, "09H")
+        two = ForecastWidget(self.currentDayCanvas, tk.LEFT, "12H")
+        three = ForecastWidget(self.currentDayCanvas, tk.LEFT, "15H")
+        four = ForecastWidget(self.currentDayCanvas, tk.LEFT, "18H")
+        five = ForecastWidget(self.currentDayCanvas, tk.LEFT, "21H")
+        self.currentForecast = [one, two, three, four, five]
+
+    def initDayOneForecast(self):
+        self.dayonenine = ForecastWidget(self.dayOneCanvas, tk.LEFT, "09H")
+        self.dayonefifteen = ForecastWidget(self.dayOneCanvas, tk.LEFT, "15H")
+        self.dayonetwentyone = ForecastWidget(self.dayOneCanvas, tk.LEFT, "21H")
+    
+    def initDayTwoForecast(self):
+        self.daytwonine = ForecastWidget(self.dayTwoCanvas, tk.LEFT, "09H")
+        self.daytwofifteen = ForecastWidget(self.dayTwoCanvas, tk.LEFT, "15H")
+        self.daytwotwentyone = ForecastWidget(self.dayTwoCanvas, tk.LEFT, "21H")
+
+    def showForecastFooter(self):
+        self.forecastFooterCanvas.pack(anchor=tk.S, fill=tk.BOTH)
+
+    def hideForecastFooter(self):
+        self.forecastFooterCanvas.pack_forget()
+    
     def initRoomWidget(self, master) :
         nameLabel = tk.Label(master, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.room["name"], font=("Helvetica", 15,"bold"))
         nameLabel.pack(anchor=tk.NW)
@@ -162,3 +225,35 @@ class WeatherUI(tk.Tk) :
 
     def exit(self, event):
         self.quit()
+
+class ForecastWidget():
+    def __init__(self, master, side, label) -> None:
+        self.title = tk.StringVar(master, label)
+        self.temp = tk.StringVar(master, "15 °C")
+        self.rain = tk.StringVar(master, "0 mm")
+
+        widg = tk.Canvas(master, bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
+        widg.pack(side=side)
+
+        label = tk.Label(widg, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.title, font=("Helvetica", 10))
+        label.pack(side=tk.TOP)
+
+        iconCanvas = tk.Canvas(widg, bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
+        iconCanvas.pack(side=tk.LEFT)
+
+        self.imageIconLabel = tk.Label(iconCanvas, bg=BACKGROUND_COLOR, borderwidth = 0, highlightthickness = 0)
+        self.imageIconLabel.pack()
+
+        temp = tk.Label(widg, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.temp, font=("Helvetica", 8,"bold"))
+        temp.pack()
+        rain = tk.Label(widg, fg=FOREGROUND_COLOR, bg=BACKGROUND_COLOR, textvariable=self.rain, font=("Helvetica", 8,"bold"))
+        rain.pack()
+        
+    def setIcon(self, img):
+        self.imageIconLabel.configure(image=img)
+    
+    def buildForecastImageObject(self, path):
+        img = Image.open(path)
+        img = img.resize((50,50))
+        img = ImageTk.PhotoImage(img)
+        return img
