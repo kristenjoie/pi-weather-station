@@ -129,7 +129,7 @@ def switchBetweenCurrentAndForecast(window, wait_time):
 
 def update_hour(window):
     window.time["hour"].set(time.strftime("%H:%M:%S", time.localtime()))
-    window.time["date"].set(time.strftime("%A %-d %b", time.localtime()).title())
+    window.time["date"].set(time.strftime("%A %-d %B", time.localtime()).title())
     window.after(1000, update_hour, window)
 
 def update_api_data(window):
@@ -250,12 +250,14 @@ def format_wind_info(weather):
     return wind_speed, wind_direction
 
 def format_air_quality(pollution):
-    if   pollution["list"][0]["main"]["aqi"] == 5: return TXT["VERY_POOR"]
-    elif pollution["list"][0]["main"]["aqi"] == 4: return TXT["POOR"]
-    elif pollution["list"][0]["main"]["aqi"] == 3: return TXT["MEDIOCRE"]
-    elif pollution["list"][0]["main"]["aqi"] == 2: return TXT["MODERATE"]
-    elif pollution["list"][0]["main"]["aqi"] == 1 : return TXT["GOOD"]
-
+    if len(pollution["list"]) > 0 :
+        if   pollution["list"][0]["main"]["aqi"] == 5: return TXT["VERY_POOR"]
+        elif pollution["list"][0]["main"]["aqi"] == 4: return TXT["POOR"]
+        elif pollution["list"][0]["main"]["aqi"] == 3: return TXT["MEDIOCRE"]
+        elif pollution["list"][0]["main"]["aqi"] == 2: return TXT["MODERATE"]
+        elif pollution["list"][0]["main"]["aqi"] == 1 : return TXT["GOOD"]
+    else:
+        return TXT["UNKNOWN"]
 ##
 # Influxdb
 # #
