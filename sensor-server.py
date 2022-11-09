@@ -116,6 +116,7 @@ elif args.sensor_type == 'bme':
         elif (score >= 151 and score <= 175 ): IAQ_text = TXT["MODERATE"]
         elif (score >=  51 and score <= 150 ): IAQ_text = TXT["GOOD"]
         elif (score >=  00 and score <=  50 ): IAQ_text = TXT["VERY_GOOD"]
+        else : IAQ_text = TXT["UNKNOWN"]
         return gas, air_quality_score, score, IAQ_text
 
     t = threading.Thread(name='sensor_background', target=sensor_background)
